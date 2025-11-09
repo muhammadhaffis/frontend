@@ -1,0 +1,19 @@
+# Backend (handled by backend/.gitignore)
+backend/submissions.csv
+backend/__pycache__/
+backend/*.pyc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
