@@ -61,9 +61,9 @@ export const SubmissionForm = () => {
         return;
       }
 
-      // Use environment variable or fallback to localhost for development
+      // Use environment variable or fallback to deployed API
       // For production, set VITE_API_URL in your environment variables
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/submit-data";
+      const API_URL = import.meta.env.VITE_API_URL || "https://haffis.pythonanywhere.com/submit-data";
       
       const response = await fetch(API_URL, {
         method: "POST",
@@ -75,16 +75,24 @@ export const SubmissionForm = () => {
           age: ageNum,
           email: formData.email.trim(),
         }),
+        mode: "cors", // Explicitly enable CORS
       });
 
-      const responseData = await response.json();
-
+      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
-        // Use server error message if available
-        const errorMsg = responseData.message || "Failed to submit data. Please try again.";
+        let errorMsg = "Failed to submit data. Please try again.";
+        try {
+          const responseData = await response.json();
+          errorMsg = responseData.message || errorMsg;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMsg = response.statusText || `Server returned error ${response.status}`;
+        }
         setErrorMessage(`Error: ${errorMsg}`);
         return;
       }
+
+      const responseData = await response.json();
 
       setSuccessMessage("Submission Successful! Thank you.");
       setFormData({ name: "", age: "", email: "" });
@@ -95,7 +103,14 @@ export const SubmissionForm = () => {
       }, 5000);
     } catch (error) {
       console.error("Submission error:", error);
-      setErrorMessage("Error: Failed to submit data. Please check your connection and try again.");
+      // Provide more specific error messages
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setErrorMessage("Error: Unable to connect to server. Please check your internet connection and ensure the backend is running.");
+      } else if (error instanceof Error) {
+        setErrorMessage(`Error: ${error.message}`);
+      } else {
+        setErrorMessage("Error: Failed to submit data. Please check your connection and try again.");
+      }
     } finally {
       setIsLoading(false);
     }
